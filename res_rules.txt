@@ -1,0 +1,9 @@
+# will include all .txt files
+.txt
+
+# can be anything (not only file extension)
+# files end with 'ain.cpp' will be included
+ain.cpp
+
+# files start with 'resources/' and ends with '.png' will be included
+>resources/*.png
