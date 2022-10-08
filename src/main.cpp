@@ -183,24 +183,21 @@ int main(int argc, char const *argv[])
 
 bool EmbedFile(std::filesystem::path path)
 {
-    std::ifstream ifstream(path, std::ios_base::binary);
-    if(!ifstream.is_open())
+    FILE* infile = fopen(path.string().c_str(), "rb");
+    if(infile == nullptr)
     {
         std::cerr << "[nmres] Embed error: can't open source resource file " << path << std::endl;
         return false;
     }
-
-    ifstream.unsetf(std::ios::skipws);
-
-    std::streampos fileSize;
-    ifstream.seekg(0, std::ios::end);
-    fileSize = ifstream.tellg();
-    ifstream.seekg(0, std::ios::beg);
+    fseek(infile, 0, SEEK_END);
+    unsigned int fileSize = ftell(infile);
+    fseek(infile, 0, SEEK_SET);
     
     if(fileSize > 0)
     {
-        std::vector<unsigned char> buffer(fileSize);
-        ifstream.read((char*)buffer.data(), fileSize);
+        char* buffer = new char[fileSize];
+        size_t _read = fread(buffer, fileSize, 1, infile);
+        fclose(infile);
 
         std::string arrayname = path;
         std::replace(arrayname.begin(), arrayname.end(), '.', '_');
@@ -213,6 +210,7 @@ bool EmbedFile(std::filesystem::path path)
         if(!ofstream.is_open())
         {
             std::cerr << "[nmres] Embed error: can't open target resource file " << path << std::endl;
+            delete[] buffer;
             return false;
         }
 
@@ -223,26 +221,18 @@ bool EmbedFile(std::filesystem::path path)
         ofstream << "namespace " << default_namespace_name << "{\n";
         ofstream << "inline std::array<unsigned char, " << fileSize << "> " << arrayname << "_data\n";
         ofstream << "{\n";
-        for(size_t i = 0; i<fileSize;)
+        for(size_t i = 0; i<fileSize; i++)
         {
-            ofstream << "\t";
-            for(size_t j = 0; j<8; j++)
-            {
-                ofstream << "0x" << std::hex << std::setw(2) << std::setfill('0') << (unsigned)buffer[i] << ",";
-                i++;
-                if(i >= fileSize)
-                    break;
-            }
-            i++;
-            if(i >= fileSize)
-                break;
-            ofstream << "\n";
+            if(i % 12 == 0)
+                ofstream << "\n\t";
+            ofstream << "0x" << std::hex << std::setw(2) << std::setfill('0') << (buffer[i] & 0xff) << ",";
         }
         ofstream << "\n};\n"; // array
         ofstream << "}\n"; // namespace
         ofstream << "#endif\n" << std::flush;
 
         std::cout << "[nmres] Embedded " << path << std::endl;
+        delete[] buffer;
     }
     else
     {
