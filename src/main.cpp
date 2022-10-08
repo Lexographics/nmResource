@@ -101,7 +101,7 @@ int main(int argc, char const *argv[])
         else if(arg == "--cwd")
             if(nextarg == "")
             {
-                std::cout << "No cwd specified. usage: --cwd 'dir/'" << std::endl;
+                std::cerr << "No cwd specified. usage: --cwd 'dir/'" << std::endl;
                 exit(1);
             }
             else
@@ -113,7 +113,7 @@ int main(int argc, char const *argv[])
         else if(arg == "--namespace")
             if(nextarg == "")
             {
-                std::cout << "No namespace specified. usage: --namespace 'name'" << std::endl;
+                std::cerr << "No namespace specified. usage: --namespace 'name'" << std::endl;
                 exit(1);
             }
             else
@@ -125,7 +125,7 @@ int main(int argc, char const *argv[])
         else if(arg == "--suffix")
             if(nextarg == "")
             {
-                std::cout << "No suffix specified. usage: --suffix '.ext'" << std::endl;
+                std::cerr << "No suffix specified. usage: --suffix '.ext'" << std::endl;
                 exit(1);
             }
             else
@@ -137,7 +137,7 @@ int main(int argc, char const *argv[])
         else if(arg == "--rules")
             if(nextarg == "")
             {
-                std::cout << "No rules file specified. usage: --rules 'file.txt'" << std::endl;
+                std::cerr << "No rules file specified. usage: --rules 'file.txt'" << std::endl;
                 exit(1);
             }
             else
@@ -186,7 +186,7 @@ bool EmbedFile(std::filesystem::path path)
     std::ifstream ifstream(path, std::ios_base::binary);
     if(!ifstream.is_open())
     {
-        std::cout << "[nmres] Embed error: can't open source resource file " << path << std::endl;
+        std::cerr << "[nmres] Embed error: can't open source resource file " << path << std::endl;
         return false;
     }
 
@@ -203,7 +203,6 @@ bool EmbedFile(std::filesystem::path path)
         ifstream.read((char*)buffer.data(), fileSize);
 
         std::string arrayname = path;
-        std::cout << path << ", " << arrayname << std::endl;
         std::replace(arrayname.begin(), arrayname.end(), '.', '_');
         std::replace(arrayname.begin(), arrayname.end(), '-', '_');
         std::replace(arrayname.begin(), arrayname.end(), '/', '_');
@@ -213,7 +212,7 @@ bool EmbedFile(std::filesystem::path path)
         std::ofstream ofstream(headerpath);
         if(!ofstream.is_open())
         {
-            std::cout << "[nmres] Embed error: can't open target resource file " << path << std::endl;
+            std::cerr << "[nmres] Embed error: can't open target resource file " << path << std::endl;
             return false;
         }
 
@@ -247,7 +246,7 @@ bool EmbedFile(std::filesystem::path path)
     }
     else
     {
-        std::cout << "[nmres] Embed error: can't open source resource file " << path << std::endl;
+        std::cerr << "[nmres] Embed error: can't open source resource file " << path << std::endl;
         return false;
     }
 
