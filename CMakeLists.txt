@@ -5,6 +5,7 @@ include(CTest)
 enable_testing()
 
 add_executable(nmres src/main.cpp)
+set_property(TARGET nmres PROPERTY CXX_STANDARD 17)
 
 set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g")
 set(CMAKE_CXX_FLAGS_RELEASE "-O2")

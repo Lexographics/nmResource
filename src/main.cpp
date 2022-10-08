@@ -4,6 +4,7 @@
 #include <fstream>
 #include <filesystem>
 #include <cstring>
+#include <algorithm>
 
 // nmres --recursive --cwd ./ --namespace Res --suffix .h
 
@@ -201,7 +202,12 @@ bool EmbedFile(std::filesystem::path path)
         std::vector<unsigned char> buffer(fileSize);
         ifstream.read((char*)buffer.data(), fileSize);
 
-        std::filesystem::path arrayname = path.filename().replace_extension("");
+        std::string arrayname = path;
+        std::cout << path << ", " << arrayname << std::endl;
+        std::replace(arrayname.begin(), arrayname.end(), '.', '_');
+        std::replace(arrayname.begin(), arrayname.end(), '-', '_');
+        std::replace(arrayname.begin(), arrayname.end(), '/', '_');
+        std::replace(arrayname.begin(), arrayname.end(), '\\', '_');
         
         std::filesystem::path headerpath = path.concat(default_resource_suffix);
         std::ofstream ofstream(headerpath);
@@ -211,12 +217,12 @@ bool EmbedFile(std::filesystem::path path)
             return false;
         }
 
-        ofstream << "#ifndef NMRESOURCE_EMBEDDED_RESOURCE_" << arrayname.string() << "_H\n";
-        ofstream << "#define NMRESOURCE_EMBEDDED_RESOURCE_" << arrayname.string() << "_H\n";
+        ofstream << "#ifndef NMRESOURCE_EMBEDDED_RESOURCE_" << arrayname << "_H\n";
+        ofstream << "#define NMRESOURCE_EMBEDDED_RESOURCE_" << arrayname << "_H\n";
         ofstream << "#pragma once\n\n";
         ofstream << "#include <array>\n";
         ofstream << "namespace " << default_namespace_name << "{\n";
-        ofstream << "inline std::array<unsigned char, " << fileSize << "> res_" << arrayname.string() << "\n";
+        ofstream << "inline std::array<unsigned char, " << fileSize << "> " << arrayname << "_data\n";
         ofstream << "{\n";
         for(size_t i = 0; i<fileSize;)
         {
