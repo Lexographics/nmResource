@@ -6,6 +6,7 @@
 #include <cstring>
 #include <algorithm>
 
+class FileRule;
 // nmres --recursive --cwd ./ --namespace Res --suffix .h
 
 // defaults
@@ -15,6 +16,10 @@ std::string default_rules_file = "./res_rules.txt";
 
 // flags
 bool flags_recursive = false;
+
+// runtime data
+std::vector<FileRule> res_rules;
+std::filesystem::path res_cwd{"./"};
 
 struct FileRule
 {
@@ -54,7 +59,7 @@ struct FileRule
             }
             else
             {
-                prefix = rule.substr(1, spacePos-1);
+                prefix = res_cwd / rule.substr(1, spacePos-1);
                 suffix = rule.substr(spacePos+1, rule.size()-1);
             }
         }
@@ -67,10 +72,6 @@ struct FileRule
     }
     ~FileRule() {}
 };
-
-// runtime data
-std::vector<FileRule> res_rules;
-std::filesystem::path res_cwd{"./"};
 
 
 bool EmbedFile(std::filesystem::path path);
