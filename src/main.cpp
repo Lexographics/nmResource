@@ -6,7 +6,7 @@
 #include <cstring>
 #include <algorithm>
 
-class FileRule;
+struct FileRule;
 // nmres --recursive --cwd ./ --namespace Res --suffix .h
 
 // defaults
@@ -40,7 +40,7 @@ struct FileRule
             if(!(pathStr.size() >= rule.suffix.size() && pathStr.compare(pathStr.size()-rule.suffix.size(), rule.suffix.size(), rule.suffix) == 0))
                 { notsuitable = true; }
         
-        
+
         return !notsuitable;
     }
 
@@ -201,6 +201,7 @@ bool EmbedFile(std::filesystem::path path)
         fclose(infile);
 
         std::string arrayname = path;
+        arrayname = std::filesystem::relative(path, res_cwd);
         std::replace(arrayname.begin(), arrayname.end(), '.', '_');
         std::replace(arrayname.begin(), arrayname.end(), '-', '_');
         std::replace(arrayname.begin(), arrayname.end(), '/', '_');
