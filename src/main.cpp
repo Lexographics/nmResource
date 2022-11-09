@@ -59,7 +59,7 @@ struct FileRule
             }
             else
             {
-                prefix = res_cwd / rule.substr(1, spacePos-1);
+                prefix = (res_cwd / rule.substr(1, spacePos-1)).string();
                 suffix = rule.substr(spacePos+1, rule.size()-1);
             }
         }
@@ -200,8 +200,8 @@ bool EmbedFile(std::filesystem::path path)
         size_t _read = fread(buffer, fileSize, 1, infile);
         fclose(infile);
 
-        std::string arrayname = path;
-        arrayname = std::filesystem::relative(path, res_cwd);
+        std::string arrayname = path.string();
+        arrayname = std::filesystem::relative(path, res_cwd).string();
         std::replace(arrayname.begin(), arrayname.end(), '.', '_');
         std::replace(arrayname.begin(), arrayname.end(), '-', '_');
         std::replace(arrayname.begin(), arrayname.end(), '/', '_');
