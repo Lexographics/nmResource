@@ -1,0 +1,173 @@
+on:
+  push:
+    tags:
+      - 'v*'
+
+name: Build and Release
+
+env:
+  BUILD_TYPE: Release
+
+jobs:
+  create-release:
+    name: Create release
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Create release
+      id: create-release
+      uses: actions/create-release@latest
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: Release ${{ github.ref }}
+        draft: false
+        prerelease: false
+      
+    - name: Get upload url
+      run: echo "${{steps.create-release.outputs.upload_url}}" > ./upload_url.txt
+    
+    - name: Save upload url
+      uses: actions/upload-artifact@v3
+      with:
+        name: upload_url
+        path: ./upload_url.txt
+    
+    - name: Show Files
+      run: ls -la
+      
+  build:
+    name: ${{ matrix.config.name }}
+    runs-on: ${{ matrix.config.os }}
+    needs: [ create-release ]
+
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+        - name: "Ubuntu GCC"
+          os: ubuntu-latest
+          artifact: "linux"
+          build_type: "Release"
+          cc: "gcc"
+          cxx: "g++"
+          archiver: "7z a"
+          generators: "Ninja"
+          cat: "cat"
+
+        # - name: "Windows MinGW"
+        #   os: windows-latest
+        #   artifact: "windows"
+        #   build_type: "Release"
+        #   cc: "gcc"
+        #   cxx: "g++"
+        #   archiver: "7z a"
+        #   generators: "Ninja"
+        #   cat: "type"
+
+        - name: "macOS Clang"
+          os: macos-latest
+          artifact: "macos"
+          build_type: "Release"
+          cc: "clang"
+          cxx: "clang++"
+          archiver: "7za a"
+          generators: "Ninja"
+          cat: "cat"
+
+        - name: "Windows MSVC"
+          os: windows-latest
+          artifact: "windows"
+          build_type: "Release"
+          cc: "cl"
+          cxx: "cl"
+          archiver: "7z a"
+          generators: "Visual Studio 17 2022"
+          cat: "type"
+
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Install dependencies on windows
+        if: startsWith(matrix.config.os, 'windows')
+        run: |
+          ninja --version
+          cmake --version
+
+      - name: Install dependencies on ubuntu
+        if: startsWith(matrix.config.name, 'ubuntu')
+        run: |
+          sudo apt-get update
+          sudo apt-get install ninja-build cmake
+          ninja --version
+          cmake --version
+          gcc --version
+
+      - name: Install dependencies on macos
+        if: startsWith(matrix.config.os, 'macos')
+        run: |
+          brew install p7zip cmake ninja
+          ninja --version
+          cmake --version
+          
+      - name: Configure
+        shell: bash
+        run: |
+          mkdir build
+          mkdir install
+          cmake    \
+            -S .    \
+            -B build \
+            -DCMAKE_BUILD_TYPE=${{ matrix.config.build_type }} \
+            -G "${{ matrix.config.generators }}" \
+            -DCMAKE_INSTALL_PREFIX:PATH=install
+
+      - name: Build
+        shell: bash
+        run: cmake --build build/ --config ${{ matrix.config.build_type }}
+
+      - name: Install Strip
+        shell: bash
+        run: cmake --install build/ --strip
+
+      - name: Pack
+        shell: bash
+        working-directory: install
+        run: |
+          ls -laR
+          ${{ matrix.config.archiver }} ../${{ matrix.config.artifact }}.7z .
+
+      - name: Get upload url
+        id: release-info
+        uses: actions/download-artifact@v3
+        with:
+          name: upload_url
+        
+      - name: Save upload url
+        run: |
+          echo "UPLOAD_URL=$( ${{ matrix.config.cat }} ${{ steps.release-info.outputs.download-path }}/upload_url.txt )"
+          echo "UPLOAD_URL=$( ${{ matrix.config.cat }} ${{ steps.release-info.outputs.download-path }}/upload_url.txt )" >> $GITHUB_ENV
+          echo $GITHUB_ENV
+      
+      - name: Print env
+        env:
+          ENV_JSON: ${{ toJson(env) }}
+        run: echo "$ENV_JSON"
+
+      - name: Upload
+        uses: actions/upload-artifact@v1
+        with:
+          path: ./${{ matrix.config.artifact }}.7z
+          name: nmres.${{ matrix.config.artifact }}
+        
+
+      - name: Upload release asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ env.UPLOAD_URL }}
+          asset_path: ./${{ matrix.config.artifact }}.7z
+          asset_name: nmres.${{ matrix.config.artifact }}.zip
+          asset_content_type: application/zip
