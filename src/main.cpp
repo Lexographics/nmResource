@@ -61,6 +61,11 @@ struct FileRule
             {
                 prefix = (res_cwd / rule.substr(1, spacePos-1)).string();
                 suffix = rule.substr(spacePos+1, rule.size()-1);
+
+                #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__MINGW32__)
+                std::replace(prefix.begin(), prefix.end(), '/', '\\');
+                std::replace(suffix.begin(), suffix.end(), '/', '\\');
+                #endif
             }
         }
         else
@@ -135,7 +140,7 @@ int main(int argc, char const *argv[])
                 i++; // skip nextarg
                 continue;
             }
-        else if(arg == "--rules")
+        else if(arg == "--rules") {
             if(nextarg == "")
             {
                 std::cerr << "No rules file specified. usage: --rules 'file.txt'" << std::endl;
@@ -147,6 +152,7 @@ int main(int argc, char const *argv[])
                 i++; // skip nextarg
                 continue;
             }
+        }
     }
 
     std::ifstream ifstream(default_rules_file);
